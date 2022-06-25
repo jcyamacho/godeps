@@ -1,6 +1,11 @@
 # godeps
 golang dependency analyzer
 
+## install
+```bash
+go install github.com/jcyamacho/godeps@latest
+```
+
 ## commands
 
 ### *flowchart*
