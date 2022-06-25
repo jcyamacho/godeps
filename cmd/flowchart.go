@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"log"
+	"os"
 	"strings"
 
 	"github.com/jcyamacho/godeps/internal/mermaid"
@@ -34,7 +35,8 @@ var flowchartCmd = &cobra.Command{
 	Short: "Print a mermaid flowchart dependency graph",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		graph, err := module.ScanDir(args[0], skipIndirectDeps)
+		fsys := os.DirFS(args[0])
+		graph, err := module.ScanDir(fsys, skipIndirectDeps)
 		if err != nil {
 			log.Fatal(err)
 		}

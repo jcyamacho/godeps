@@ -1,10 +1,8 @@
 package module
 
 import (
-	"os"
-	"path/filepath"
+	"io/fs"
 	"sort"
-	"strings"
 	"sync"
 
 	"github.com/hashicorp/go-multierror"
@@ -12,8 +10,8 @@ import (
 
 const goModFileName = "go.mod"
 
-func ScanDir(root string, skipIndirectDeps bool) (Graph, error) {
-	fileMods, err := scanGoModFiles(root)
+func ScanDir(fsys fs.FS, skipIndirectDeps bool) (Graph, error) {
+	fileMods, err := scanGoModFiles(fsys)
 	if err != nil {
 		return nil, err
 	}
@@ -23,7 +21,7 @@ func ScanDir(root string, skipIndirectDeps bool) (Graph, error) {
 	for _, file := range fileMods {
 		file := file
 		g.Go(func() error {
-			mod, err := FromFile(file, skipIndirectDeps)
+			mod, err := FromFile(fsys, file, skipIndirectDeps)
 			if err != nil {
 				return err
 			}
@@ -42,13 +40,18 @@ func ScanDir(root string, skipIndirectDeps bool) (Graph, error) {
 	return toModulesList(modules), nil
 }
 
-func scanGoModFiles(root string) ([]string, error) {
+func scanGoModFiles(fsys fs.FS) ([]string, error) {
 	var files []string
-	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+	err := fs.WalkDir(fsys, ".", func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
-		if !info.IsDir() && strings.HasSuffix(path, goModFileName) {
+		info, err := d.Info()
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() && info.Name() == goModFileName {
+
 			files = append(files, path)
 		}
 		return nil

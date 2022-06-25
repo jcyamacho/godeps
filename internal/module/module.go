@@ -1,7 +1,8 @@
 package module
 
 import (
-	"io/ioutil"
+	"io"
+	"io/fs"
 
 	"golang.org/x/mod/modfile"
 )
@@ -12,8 +13,17 @@ type Module struct {
 	Dependencies []*Module
 }
 
-func (m *Module) AddDependency(module *Module) {
-	m.Dependencies = append(m.Dependencies, module)
+func (m *Module) AddDependency(modules ...*Module) {
+	m.Dependencies = append(m.Dependencies, modules...)
+}
+
+func (m *Module) HasDep(name string) bool {
+	for _, dep := range m.Dependencies {
+		if dep.Name == name {
+			return true
+		}
+	}
+	return false
 }
 
 func New(name string) *Module {
@@ -22,8 +32,8 @@ func New(name string) *Module {
 	}
 }
 
-func FromFile(path string, skipIndirectDeps bool) (*Module, error) {
-	data, err := ioutil.ReadFile(path)
+func FromFile(fsys fs.FS, path string, skipIndirectDeps bool) (*Module, error) {
+	data, err := readFile(fsys, path)
 	if err != nil {
 		return nil, err
 	}
@@ -44,4 +54,13 @@ func FromFile(path string, skipIndirectDeps bool) (*Module, error) {
 	}
 
 	return module, nil
+}
+
+func readFile(fsys fs.FS, path string) ([]byte, error) {
+	file, err := fsys.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+	return io.ReadAll(file)
 }

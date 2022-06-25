@@ -14,6 +14,15 @@ func (g Graph) Prune(filter func(*Module) bool) Graph {
 	return res
 }
 
+func (g Graph) FindByName(name string) *Module {
+	for _, mod := range g {
+		if mod.Name == name {
+			return mod
+		}
+	}
+	return nil
+}
+
 func excludeItems(list []*Module, filter func(*Module) bool) []*Module {
 	result := make([]*Module, 0, len(list))
 	for _, mod := range list {
